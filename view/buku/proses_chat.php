@@ -10,6 +10,7 @@ if (!isset($_SESSION['username']) || !isset($_POST['id_buku']) || !isset($_POST[
 }
 
 $idBuku = $_POST['id_buku'];
+$idParent = isset($_POST['id_parent']) && is_numeric($_POST['id_parent']) ? $_POST['id_parent'] : null;
 $username = $_SESSION['username'];
 $pesan = trim($_POST['pesan']);
 $uploadDir = '../../data/img/';
@@ -44,19 +45,17 @@ if (!empty($_FILES['gambar']['name'])) {
     }
 }
 
-// Insert chat data into database
-$insertQuery = "INSERT INTO chats (id_user, id_buku, chat, media_chat) VALUES (?, ?, ?, ?)";
+// Insert chat data into database (include id_parent)
+$insertQuery = "INSERT INTO chats (id_user, id_buku, chat, media_chat, id_parent) VALUES (?, ?, ?, ?, ?)";
 $insertStmt = mysqli_prepare($conn, $insertQuery);
-mysqli_stmt_bind_param($insertStmt, "iiss", $idUser, $idBuku, $pesan, $mediaChat);
+mysqli_stmt_bind_param($insertStmt, "iissi", $idUser, $idBuku, $pesan, $mediaChat, $idParent);
 
 if (mysqli_stmt_execute($insertStmt)) {
-    // Success
     header("Location: index.php?id=$idBuku");
 } else {
-    // Error
     echo "<script>alert('Gagal menyimpan komentar: " . mysqli_error($conn) . "'); window.history.back();</script>";
 }
 
-// Close database connection
+// Close connection
 mysqli_close($conn);
 exit;

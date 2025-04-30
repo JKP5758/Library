@@ -2137,4 +2137,242 @@ nav{
         min-width: 28px;
     }
 }
+
+.chat-time {
+    font-size: 0.85em;
+    color: #888;
+    margin-left: 15px;
+    white-space: nowrap;
+}
   
+/* replay chat */
+.reply-btn {
+    font-size: 0.8em;
+    background: none;
+    color: #007bff;
+    border: none;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.reply-form textarea {
+    width: 100%;
+    margin-top: 5px;
+}
+
+.book-chat-box {
+    border-left: 2px solid #ccc;
+    padding-left: 10px;
+    margin-top: 10px;
+}
+
+/* Chat Styles */
+.chat-item {
+    margin-bottom: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.chat-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.chat-item[data-level="0"] {
+    margin-left: 0;
+}
+
+.chat-item[data-level="1"] {
+    margin-left: 30px;
+    border-left: 3px solid #e0e0e0;
+    padding-left: 15px;
+}
+
+.chat-item[data-level="2"] {
+    margin-left: 60px;
+    border-left: 3px solid #d0d0d0;
+    padding-left: 15px;
+}
+
+.chat-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.chat-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.username {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.chat-time {
+    font-size: 0.85em;
+    color: #888;
+}
+
+.chat-content {
+    padding: 15px;
+}
+
+.chat-media {
+    margin-bottom: 10px;
+}
+
+.chat-media img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.chat-media img:hover {
+    transform: scale(1.02);
+}
+
+.chat-message {
+    color: #333;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.chat-actions {
+    padding: 0 15px 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.reply-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    color: #3498db;
+    font-size: 0.9em;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.reply-btn:hover {
+    background: #f0f7ff;
+    color: #2980b9;
+}
+
+.reply-btn i {
+    font-size: 0.9em;
+}
+
+.reply-form {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+    margin-top: 10px;
+}
+
+.reply-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    resize: vertical;
+    min-height: 80px;
+    font-size: 0.95em;
+    transition: border-color 0.3s ease;
+}
+
+.reply-form textarea:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.reply-form .form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.reply-form .submit-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.reply-form .submit-btn:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.chat-replies {
+    margin-top: 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .chat-item[data-level="1"] {
+        margin-left: 20px;
+    }
+
+    .chat-item[data-level="2"] {
+        margin-left: 40px;
+    }
+
+    .chat-media img {
+        max-height: 200px;
+    }
+}
+
+.reply-header {
+    background: #f0f7ff;
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border-left: 3px solid #3498db;
+}
+
+.reply-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: #3498db;
+    font-size: 0.9em;
+}
+
+.reply-info i {
+    font-size: 0.9em;
+}
+
+.reply-info strong {
+    color: #2c3e50;
+}
+
+.original-message {
+    background: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+}
+
+.original-message p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9em;
+    line-height: 1.4;
+    white-space: pre-wrap;
+}

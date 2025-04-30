@@ -26,12 +26,13 @@ if ($result && mysqli_num_rows($result) > 0) {
 }
 
 // Fetch chat data from database with user information
-$chats = [];
-$chatQuery = "SELECT c.id_chat, c.chat, c.media_chat, c.waktu, u.nama, u.username 
+$chatTree = [];
+$chatIndex = [];
+$chatQuery = "SELECT c.id_chat, c.id_parent, c.chat, c.media_chat, c.waktu, u.nama, u.username 
               FROM chats c 
               JOIN users u ON c.id_user = u.id_user 
               WHERE c.id_buku = ? 
-              ORDER BY c.waktu DESC";
+              ORDER BY c.waktu ASC";
 $chatStmt = mysqli_prepare($conn, $chatQuery);
 mysqli_stmt_bind_param($chatStmt, "s", $idParam);
 mysqli_stmt_execute($chatStmt);
@@ -39,18 +40,95 @@ $chatResult = mysqli_stmt_get_result($chatStmt);
 
 if ($chatResult && mysqli_num_rows($chatResult) > 0) {
     while ($chatRow = mysqli_fetch_assoc($chatResult)) {
-        $chats[] = [
+        $chat = [
+            'id_chat' => $chatRow['id_chat'],
+            'id_parent' => $chatRow['id_parent'],
             'user' => $chatRow['nama'],
             'username' => $chatRow['username'],
             'img' => $chatRow['media_chat'],
             'pesan' => $chatRow['chat'],
-            'waktu' => $chatRow['waktu']
+            'waktu' => $chatRow['waktu'],
+            'balasan' => []
         ];
+        $chatIndex[$chat['id_chat']] = $chat;
+
+        if ($chat['id_parent'] === null) {
+            $chatTree[] = &$chatIndex[$chat['id_chat']];
+        } else {
+            $chatIndex[$chat['id_parent']]['balasan'][] = &$chatIndex[$chat['id_chat']];
+        }
     }
 }
 
 // Close database connection
 mysqli_close($conn);
+
+function tampilkanChat($chatList, $level = 0) {
+    foreach ($chatList as $chat) {
+        $indent = str_repeat("&nbsp;&nbsp;&nbsp;&nbsp;", $level);
+        echo '<div class="chat-item" data-level="'.$level.'">';
+        echo '<div class="chat-header">';
+        echo '<div class="chat-user">';
+        echo '<span class="username">' . htmlspecialchars($chat['username']) . '</span>';
+        echo '<span class="chat-time">' . date('d M Y', strtotime($chat['waktu'])) . '</span>';
+        echo '</div>';
+        echo '</div>';
+
+        echo '<div class="chat-content">';
+        if (!empty($chat['img']) && $chat['img'] !== 'default.png') {
+            echo '<div class="chat-media">';
+            echo '<a href="../../data/img/' . htmlspecialchars($chat['img']) . '" target="_blank">';
+            echo '<img src="../../data/img/' . htmlspecialchars($chat['img']) . '" alt="Gambar Komentar">';
+            echo '</a>';
+            echo '</div>';
+        }
+
+        echo '<div class="chat-message">' . htmlspecialchars($chat['pesan']) . '</div>';
+        echo '</div>';
+
+        echo '<div class="chat-actions">';
+        echo '<button class="reply-btn" onclick="toggleReplyForm('.$chat['id_chat'].')">';
+        echo '<i class="fas fa-reply"></i> Balas';
+        echo '</button>';
+        echo '</div>';
+
+        echo '<div id="reply-form-'.$chat['id_chat'].'" class="reply-form" style="display:none;">';
+        echo '<form action="proses_chat.php" method="post" enctype="multipart/form-data">';
+        echo '<input type="hidden" name="id_buku" value="'.htmlspecialchars($GLOBALS['book']['id']).'">';
+        echo '<input type="hidden" name="id_parent" value="'.$chat['id_chat'].'">';
+        echo '<div class="reply-header">';
+        echo '<div class="reply-info">';
+        echo '<i class="fas fa-reply"></i>';
+        echo '<span>Membalas <strong>'.htmlspecialchars($chat['username']).'</strong></span>';
+        echo '</div>';
+        echo '<div class="original-message">';
+        echo '<p>'.htmlspecialchars($chat['pesan']).'</p>';
+        echo '</div>';
+        echo '</div>';
+        echo '<div class="form-group">';
+        echo '<textarea name="pesan" placeholder="Tulis balasan..." required></textarea>';
+        echo '</div>';
+        echo '<div class="form-actions">';
+        echo '<div class="file-upload">';
+        echo '<label for="gambar-'.$chat['id_chat'].'" class="file-label">';
+        echo '<i class="fas fa-image"></i> Tambah Gambar';
+        echo '</label>';
+        echo '<input type="file" name="gambar" id="gambar-'.$chat['id_chat'].'" accept="image/*">';
+        echo '</div>';
+        echo '<button type="submit" class="submit-btn">Kirim Balasan</button>';
+        echo '</div>';
+        echo '</form>';
+        echo '</div>';
+
+        if (!empty($chat['balasan'])) {
+            echo '<div class="chat-replies">';
+            tampilkanChat($chat['balasan'], $level + 1);
+            echo '</div>';
+        }
+
+        echo '</div>';
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -136,23 +214,11 @@ mysqli_close($conn);
                     <p class="book-login-msg">Silakan login untuk mengirim komentar.</p>
                 <?php endif; ?>
 
-                <?php if (empty($chats)): ?>
+                <?php if (empty($chatTree)): ?>
                     <p class="book-login-msg">Belum ada komentar untuk buku ini.</p>
                 <?php else: ?>
                     <div class="book-chat-list">
-                        <?php foreach ($chats as $chat): ?>
-                            <div class="book-chat-box">
-                                <div class="book-chat-username"><?= htmlspecialchars($chat['user']) ?> <span class="chat-time"><?= date('d M Y H:i', strtotime($chat['waktu'])) ?></span></div>
-                                <?php if (!empty($chat['img']) && $chat['img'] !== 'default.png'): ?>
-                                    <div class="book-chat-img">
-                                        <a href="../../data/img/<?= htmlspecialchars($chat['img']) ?>">
-                                            <img src="../../data/img/<?= htmlspecialchars($chat['img']) ?>" alt="Gambar Komentar">
-                                        </a>
-                                    </div>
-                                <?php endif; ?>
-                                <p class="book-chat-message"><?= htmlspecialchars($chat['pesan']) ?></p>
-                            </div>
-                        <?php endforeach; ?>
+                        <?php tampilkanChat($chatTree); ?>
                     </div>
                 <?php endif; ?>
             </div>
@@ -197,6 +263,28 @@ mysqli_close($conn);
 
             let likeCount = parseInt(count.textContent);
             count.textContent = liked ? likeCount - 1 : likeCount + 1;
+        }
+
+        // Fungsi untuk toggle form balas
+        function toggleReplyForm(chatId) {
+            const replyForm = document.getElementById('reply-form-' + chatId);
+            const allReplyForms = document.querySelectorAll('.reply-form');
+            
+            // Sembunyikan semua form balas
+            allReplyForms.forEach(form => {
+                if (form.id !== 'reply-form-' + chatId) {
+                    form.style.display = 'none';
+                }
+            });
+            
+            // Toggle form yang dipilih
+            if (replyForm.style.display === 'none' || replyForm.style.display === '') {
+                replyForm.style.display = 'block';
+                // Scroll ke form yang dibuka
+                replyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                replyForm.style.display = 'none';
+            }
         }
     </script>
 
