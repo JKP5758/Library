@@ -1,4 +1,6 @@
-<?php include 'includes/header.php'; ?>
+<?php 
+include '../../includes/header.php'; 
+?>
 
 <div class="form-container">
     <h2>Registrasi Akun</h2>
@@ -51,7 +53,7 @@
             <button type="submit" class="btn-primary">Daftar</button>
         </div>
         
-        <p>Sudah punya akun? <a href="login.php">Login di sini</a></p>
+        <p>Sudah punya akun? <a href="index.php">Login di sini</a></p>
     </form>
 </div>
 
@@ -95,4 +97,4 @@
     konfirmasiInput.addEventListener("input", checkPasswordMatch);
 </script>
 
-<?php include 'includes/footer.php'; ?>
+<?php include '../../includes/footer.php'; ?>

@@ -1,32 +1,35 @@
 <?php
-include 'includes/header.php';
+include '../../includes/header.php';
+include '../../includes/db.php';
 
 if (!isset($_SESSION['username'])) {
-    header("Location: login.php");
+    header("Location: ../login/");
     exit();
 }
 
 $username = $_SESSION['username'];
-$dataFile = 'data/users.txt';
 $userData = null;
 
-if (file_exists($dataFile)) {
-    $lines = file($dataFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        list($id, $nama, $user, $pass, $email, $telp, $alamat) = explode('|', $line);
-        if (trim($user) === $username) {
-            $userData = [
-                'id' => $id,
-                'nama' => $nama,
-                'username' => $user,
-                'email' => $email,
-                'telepon' => $telp,
-                'alamat' => $alamat
-            ];
-            break;
-        }
-    }
+// Get user data from database
+$query = "SELECT id_user, nama, username, email, telfon, alamat FROM users WHERE username = ?";
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "s", $username);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+if ($row = mysqli_fetch_assoc($result)) {
+    $userData = [
+        'id' => $row['id_user'],
+        'nama' => $row['nama'],
+        'username' => $row['username'],
+        'email' => $row['email'],
+        'telepon' => $row['telfon'],
+        'alamat' => $row['alamat']
+    ];
 }
+
+// Close database connection
+mysqli_close($conn);
 
 if (!$userData) {
     echo "<p>Data pengguna tidak ditemukan.</p>";
@@ -129,4 +132,4 @@ if (!$userData) {
     konfirmasiInput.addEventListener("input", checkPasswordMatch);
 </script>
 
-<?php include 'includes/footer.php'; ?> 
+<?php include '../../includes/footer.php'; ?> 

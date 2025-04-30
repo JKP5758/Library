@@ -1,22 +1,28 @@
 <?php
 session_start();
+include '../../includes/db.php';
 
 if (!isset($_SESSION['username'])) {
-    echo "<script>alert('Silakan login terlebih dahulu!'); window.location='login.php';</script>";
+    echo "<script>alert('Silakan login terlebih dahulu!'); window.location='../login/index.php';</script>";
     exit;
 }
 
 if (isset($_POST['buku'])) {
-    $userId = $_SESSION['id'];
-    $username = $_SESSION['username'];
+    $userId = $_SESSION['id_user'];
     list($idBuku, $namaBuku) = explode('|', $_POST['buku']);
 
-    $data = "$userId|$username|$idBuku|$namaBuku\n";
-    file_put_contents('data/polling.txt', $data, FILE_APPEND);
+    // Insert poll into database
+    $query = "INSERT INTO polling (id_user, id_buku) VALUES (?, ?)";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $userId, $idBuku);
+    mysqli_stmt_execute($stmt);
 
-    echo "<script>alert('Polling berhasil dikirim!'); window.location='polling.php';</script>";
+    // Close database connection
+    mysqli_close($conn);
+
+    echo "<script>alert('Polling berhasil dikirim!'); window.location='../polling';</script>";
     exit;
 } else {
-    echo "<script>alert('Polling gagal, data tidak lengkap!'); window.location='polling.php';</script>";
+    echo "<script>alert('Polling gagal, data tidak lengkap!'); window.location='../polling';</script>";
     exit;
 }

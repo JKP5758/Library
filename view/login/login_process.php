@@ -1,45 +1,43 @@
 <?php
 session_start();
 
+// Include database connection
+include '../../includes/db.php';
+
 $username = $_POST['username'];
 $password = $_POST['password'];
 
-$file = 'data/users.txt';
-$valid = false;
+// Query to check user credentials
+$query = "SELECT id_user, username, nama FROM users WHERE username = ? AND password = ?";
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "ss", $username, $password);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 
-if (file_exists($file) && filesize($file) > 0) {
-    $handle = fopen($file, 'r');
-    $contents = fread($handle, filesize($file));
-    fclose($handle);
-
-    $lines = explode("\n", $contents);
-    foreach ($lines as $line) {
-        if (trim($line) === '') continue;
-
-        $parts = explode('|', $line);
-
-        // Cek apakah kolom username dan password cocok
-        if (isset($parts[2]) && isset($parts[3]) &&
-            $username === trim($parts[2]) && $password === trim($parts[3])) {
-
-            $_SESSION['username'] = $username;
-            $_SESSION['id'] = $parts[0];
-            $valid = true;
-            break;
-        }
-    }
-}
-
-if ($valid) {
+if ($result && mysqli_num_rows($result) > 0) {
+    $user = mysqli_fetch_assoc($result);
+    
+    // Set session variables
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['id_user'] = $user['id_user'];
+    $_SESSION['nama'] = $user['nama'];
+    $_SESSION['isLoggedIn'] = true;
+    
+    // Close database connection
+    mysqli_close($conn);
+    
     echo "<script>
-        alert('Login berhasil! Selamat datang, $username');
-        window.location.href = 'index.php';
+        alert('Login berhasil! Selamat datang, " . $user['nama'] . "');
+        window.location.href = '../dashboard/index.php';
     </script>";
     exit;
 } else {
+    // Close database connection
+    mysqli_close($conn);
+    
     echo "<script>
         alert('Username atau password salah!');
-        window.location.href = 'login.php';
+        window.location.href = 'index.php';
     </script>";
     exit;
 }

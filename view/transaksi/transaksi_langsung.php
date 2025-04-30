@@ -1,5 +1,6 @@
 <?php
-include 'includes/header.php';
+include '../../includes/header.php';
+include '../../includes/db.php';
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['username']);
@@ -15,26 +16,22 @@ $jumlah = isset($_GET['jumlah']) ? $_GET['jumlah'] : '1';
 $hargaBersih = (int) str_replace(['Rp.', '.', ','], '', $harga);
 $totalTagihan = $hargaBersih * $jumlah;
 
-// If user is logged in, get their data from users.txt
+// If user is logged in, get their data from database
 if ($isLoggedIn) {
-    $usersFile = 'data/users.txt';
-    if (file_exists($usersFile)) {
-        $lines = file($usersFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        // Skip header line
-        array_shift($lines);
-        
-        foreach ($lines as $line) {
-            list($id, $nama, $username, $password, $email, $noHp, $alamat) = explode('|', $line);
-            if ($username === $_SESSION['username']) {
-                $userData = [
-                    'nama' => $nama,
-                    'email' => $email,
-                    'noHp' => $noHp,
-                    'alamat' => $alamat
-                ];
-                break;
-            }
-        }
+    $username = $_SESSION['username'];
+    $query = "SELECT nama, email, telfon, alamat FROM users WHERE username = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "s", $username);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    if ($row = mysqli_fetch_assoc($result)) {
+        $userData = [
+            'nama' => $row['nama'],
+            'email' => $row['email'],
+            'noHp' => $row['telfon'],
+            'alamat' => $row['alamat']
+        ];
     }
 }
 
@@ -44,6 +41,9 @@ $shippingCosts = [
     'express' => 30000,
     'sameDay' => 50000
 ];
+
+// Close database connection
+mysqli_close($conn);
 ?>
 
 <div class="site-content">
@@ -232,4 +232,4 @@ $shippingCosts = [
     });
 </script>
 
-<?php include 'includes/footer.php'; ?> 
+<?php include '../../includes/footer.php'; ?> 

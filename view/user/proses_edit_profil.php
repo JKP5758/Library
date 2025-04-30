@@ -1,14 +1,13 @@
 <?php
 session_start();
+include '../../includes/db.php';
 
 if (!isset($_SESSION['username'])) {
-    header("Location: login.php");
+    header("Location: ../login/index.php");
     exit();
 }
 
 $username = $_SESSION['username'];
-$dataFile = 'data/users.txt';
-$tempFile = 'data/users_temp.txt';
 
 // Ambil data dari form
 $nama = $_POST['nama'];
@@ -31,46 +30,28 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit();
 }
 
-// Baca file users.txt dan update data
-if (file_exists($dataFile)) {
-    $lines = file($dataFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $updated = false;
-    $newLines = [];
-    
-    foreach ($lines as $line) {
-        list($id, $oldNama, $oldUser, $oldPass, $oldEmail, $oldTelp, $oldAlamat) = explode('|', $line);
-        
-        if (trim($oldUser) === $username) {
-            // Gunakan password baru jika diisi, jika tidak gunakan password lama
-            $newPass = !empty($password) ? $password : $oldPass;
-            
-            // Buat baris baru dengan data yang diperbarui
-            $newLine = "$id|$nama|$oldUser|$newPass|$email|$telepon|$alamat";
-            $newLines[] = $newLine;
-            $updated = true;
-        } else {
-            $newLines[] = $line;
-        }
-    }
-    
-    if ($updated) {
-        // Tulis ke file temporary
-        file_put_contents($tempFile, implode("\n", $newLines) . "\n");
-        
-        // Ganti file asli dengan file temporary
-        rename($tempFile, $dataFile);
-        
-        $_SESSION['success'] = "Profil berhasil diperbarui.";
-        header("Location: profil.php");
-        exit();
-    } else {
-        $_SESSION['error'] = "Gagal memperbarui profil. Pengguna tidak ditemukan.";
-        header("Location: edit_profil.php");
-        exit();
-    }
+// Update user data in database
+if (!empty($password)) {
+    // Update with new password
+    $query = "UPDATE users SET nama = ?, email = ?, telfon = ?, alamat = ?, password = ? WHERE username = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "ssssss", $nama, $email, $telepon, $alamat, $password, $username);
 } else {
-    $_SESSION['error'] = "File data pengguna tidak ditemukan.";
-    header("Location: edit_profil.php");
-    exit();
+    // Update without changing password
+    $query = "UPDATE users SET nama = ?, email = ?, telfon = ?, alamat = ? WHERE username = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "sssss", $nama, $email, $telepon, $alamat, $username);
 }
+
+if (mysqli_stmt_execute($stmt)) {
+    $_SESSION['success'] = "Profil berhasil diperbarui.";
+    header("Location: ../user");
+} else {
+    $_SESSION['error'] = "Gagal memperbarui profil. " . mysqli_error($conn);
+    header("Location: edit_profil.php");
+}
+
+// Close database connection
+mysqli_close($conn);
+exit();
 ?> 

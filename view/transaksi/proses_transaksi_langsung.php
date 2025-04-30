@@ -1,11 +1,13 @@
 <?php
 session_start();
+include '../../includes/db.php';
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['username']);
-$userId = $isLoggedIn ? $_SESSION['id'] : '000'; // Use '000' for guest users
+$userId = $isLoggedIn ? $_SESSION['id_user'] : '000'; // Use '000' for guest users
 
 // Get current date and time
+date_default_timezone_set('Asia/Jakarta');
 $currentDate = date('Y-m-d H:i:s');
 
 // Generate a unique transaction ID
@@ -28,36 +30,29 @@ $judul = isset($_POST['judul']) ? $_POST['judul'] : '';
 $harga = isset($_POST['harga']) ? $_POST['harga'] : '0';
 $jumlah = isset($_POST['jumlah']) ? $_POST['jumlah'] : '1';
 
-// Format items for transaction record
-$itemsData = $idBuku . ':' . $judul . ':' . $jumlah . ':' . $harga;
+// Insert transaction into database
+$query = "INSERT INTO transactions (transaction_id, id_user, nama, email, alamat, no_hp, 
+          jenis_pengiriman, metode_pembayaran, total_tagihan, biaya_pengiriman, diskon, 
+          created_at, status) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "sissssssiiss", 
+    $transactionId, $userId, $nama, $email, $alamat, $noHp, 
+    $jenisPengiriman, $metodePembayaran, $totalTagihan, $shippingCost, 
+    $discountAmount, $currentDate
+);
+mysqli_stmt_execute($stmt);
 
-// Create transaction record
-$transactionRecord = $transactionId . '|' . 
-                    $userId . '|' . 
-                    $nama . '|' . 
-                    $email . '|' . 
-                    $alamat . '|' . 
-                    $noHp . '|' . 
-                    $jenisPengiriman . '|' . 
-                    $metodePembayaran . '|' . 
-                    $totalTagihan . '|' . 
-                    $shippingCost . '|' . 
-                    $discountAmount . '|' . 
-                    $itemsData . '|' . 
-                    $currentDate . '|' . 
-                    'pending';
+// Insert transaction item
+$query = "INSERT INTO transaction_items (transaction_id, id_buku, jumlah, harga) 
+          VALUES (?, ?, ?, ?)";
+$stmt = mysqli_prepare($conn, $query);
+$hargaBersih = (int) str_replace(['Rp.', '.', ','], '', $harga);
+mysqli_stmt_bind_param($stmt, "siid", $transactionId, $idBuku, $jumlah, $hargaBersih);
+mysqli_stmt_execute($stmt);
 
-// Save transaction to file
-$transaksiFile = 'data/transaksi.txt';
-
-// Create header if file doesn't exist
-if (!file_exists($transaksiFile)) {
-    $header = "ID Transaksi|ID User|Nama|Email|Alamat|No HP|Jenis Pengiriman|Metode Pembayaran|Total Tagihan|Biaya Pengiriman|Diskon|Items|Tanggal|Status\n";
-    file_put_contents($transaksiFile, $header);
-}
-
-// Append transaction record
-file_put_contents($transaksiFile, $transactionRecord . "\n", FILE_APPEND);
+// Close database connection
+mysqli_close($conn);
 
 // Redirect to success page
 header('Location: sukses.php?id=' . $transactionId);

@@ -2006,4 +2006,135 @@ nav{
     line-height: 1.5;
     white-space: pre-line;
 }
+
+/* Image Upload Preview Styles */
+.image-upload-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.image-upload-item {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-preview {
+    width: 200px;
+    height: 280px;
+    border: 2px dashed #3498db;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.image-preview:hover {
+    border-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.image-preview.has-image {
+    border-style: solid;
+}
+
+.placeholder-text {
+    color: #95a5a6;
+    font-size: 1.1em;
+    text-align: center;
+    padding: 20px;
+}
+
+.image-upload-item input[type="file"] {
+    display: none;
+}
+
+.upload-label {
+    padding: 8px 16px;
+    background: #3498db;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+    text-align: center;
+    width: 120px;
+}
+
+.upload-label:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(52, 152, 219, 0.2);
+}
+
+.upload-label i {
+    margin-right: 5px;
+}
+
+@media (max-width: 768px) {
+    .image-upload-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .image-upload-item {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+.input-harga-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding-left: 10px;
+    height: 48px;
+    margin-top: 5px;
+}
+.input-harga-label {
+    font-size: 1.1em;
+    color: #3498db;
+    font-weight: 600;
+    margin-right: 8px;
+    min-width: 32px;
+}
+.input-harga-wrapper input[type="text"] {
+    border: none;
+    background: transparent;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #2c3e50;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 8px;
+}
+.input-harga-wrapper input[type="text"]:focus {
+    background: #fff;
+}
+
+@media (max-width: 768px) {
+    .input-harga-wrapper {
+        height: 40px;
+        padding-left: 6px;
+    }
+    .input-harga-label {
+        font-size: 1em;
+        min-width: 28px;
+    }
+}
   

@@ -1,20 +1,23 @@
 <?php
 session_start();
+include '../../includes/db.php';
 
 // Set timezone ke WIB (GMT +7)
 date_default_timezone_set('Asia/Jakarta');
 
-$nickname = $_SESSION['username'] ?? null;
+$idUser = $_SESSION['id_user'] ?? null;
 $chat = $_POST['chat'] ?? '';
 $mediaName = '';
 
-if (!$nickname || !$chat) {
+if (!$idUser || !$chat) {
     header("Location: community.php");
     exit;
 }
 
-if (!is_dir('data/uploads')) {
-    mkdir('data/uploads', 0777, true);
+// Create uploads directory if it doesn't exist
+$uploadDir = '../../assets/uploads/';
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0777, true);
 }
 
 if (!empty($_FILES['media']['name'])) {
@@ -23,18 +26,18 @@ if (!empty($_FILES['media']['name'])) {
 
     if (in_array(strtolower($ext), $allowed)) {
         $mediaName = uniqid() . '.' . $ext;
-        move_uploaded_file($_FILES['media']['tmp_name'], 'data/uploads/' . $mediaName);
+        move_uploaded_file($_FILES['media']['tmp_name'], $uploadDir . $mediaName);
     }
 }
 
-// encode chat agar newline tidak rusak format
-$chatEncoded = base64_encode($chat);
+// Insert post into database (now using id_user)
+$query = "INSERT INTO community_posts (id_user, chat, media, waktu) VALUES (?, ?, ?, NOW())";
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "iss", $idUser, $chat, $mediaName);
+mysqli_stmt_execute($stmt);
 
-// Dapatkan timestamp saat ini dalam format WIB
-$timestamp = date('Y-m-d H:i:s');
+// Close database connection
+mysqli_close($conn);
 
-$line = "$nickname|$chatEncoded|$mediaName|$timestamp\n";
-file_put_contents('data/community.txt', $line, FILE_APPEND);
-
-header("Location: community.php");
+header("Location: ../member");
 exit;

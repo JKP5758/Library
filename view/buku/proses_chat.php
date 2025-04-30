@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+// Include database connection
+include '../../includes/db.php';
+
 if (!isset($_SESSION['username']) || !isset($_POST['id_buku']) || !isset($_POST['pesan'])) {
     echo "<script>alert('Data tidak lengkap atau belum login.'); window.history.back();</script>";
     exit;
@@ -9,10 +12,25 @@ if (!isset($_SESSION['username']) || !isset($_POST['id_buku']) || !isset($_POST[
 $idBuku = $_POST['id_buku'];
 $username = $_SESSION['username'];
 $pesan = trim($_POST['pesan']);
-$uploadDir = 'data/img/';
-$chatFile = 'data/chat.txt';
-$gambar = '';
+$uploadDir = '../../data/img/';
+$mediaChat = 'default.png';
 
+// Get user ID from username
+$userQuery = "SELECT id_user FROM users WHERE username = ?";
+$userStmt = mysqli_prepare($conn, $userQuery);
+mysqli_stmt_bind_param($userStmt, "s", $username);
+mysqli_stmt_execute($userStmt);
+$userResult = mysqli_stmt_get_result($userStmt);
+
+if (!$userResult || mysqli_num_rows($userResult) === 0) {
+    echo "<script>alert('User tidak ditemukan.'); window.history.back();</script>";
+    exit;
+}
+
+$userRow = mysqli_fetch_assoc($userResult);
+$idUser = $userRow['id_user'];
+
+// Handle image upload if provided
 if (!empty($_FILES['gambar']['name'])) {
     $fileName = uniqid() . '_' . basename($_FILES['gambar']['name']);
     $targetPath = $uploadDir . $fileName;
@@ -22,17 +40,23 @@ if (!empty($_FILES['gambar']['name'])) {
     }
 
     if (move_uploaded_file($_FILES['gambar']['tmp_name'], $targetPath)) {
-        $gambar = $fileName;
+        $mediaChat = $fileName;
     }
 }
 
-// Jika tidak ada gambar, beri nilai placeholder (bisa juga kosong)
-if ($gambar === '') {
-    $gambar = 'default.png'; // atau kosongkan jika tidak ingin gambar sama sekali
+// Insert chat data into database
+$insertQuery = "INSERT INTO chats (id_user, id_buku, chat, media_chat) VALUES (?, ?, ?, ?)";
+$insertStmt = mysqli_prepare($conn, $insertQuery);
+mysqli_stmt_bind_param($insertStmt, "iiss", $idUser, $idBuku, $pesan, $mediaChat);
+
+if (mysqli_stmt_execute($insertStmt)) {
+    // Success
+    header("Location: index.php?id=$idBuku");
+} else {
+    // Error
+    echo "<script>alert('Gagal menyimpan komentar: " . mysqli_error($conn) . "'); window.history.back();</script>";
 }
 
-$baris = "$idBuku|$username|$gambar|$pesan\n";
-file_put_contents($chatFile, $baris, FILE_APPEND);
-
-header("Location: detail.php?id=$idBuku");
+// Close database connection
+mysqli_close($conn);
 exit;

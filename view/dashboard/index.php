@@ -10,72 +10,79 @@
 
 <div class="product-container">
 <?php
-$filename = 'data/books.txt';
-$search = isset($_GET['search']) ? strtolower(trim($_GET['search'])) : '';
+// Include database connection
+include '../../includes/db.php';
 
-if (file_exists($filename) && filesize($filename) > 0) {
-    $handle = fopen($filename, 'r');
-    $contents = fread($handle, filesize($filename));
-    fclose($handle);
+$search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
 
-    $lines = explode("\n", $contents);
-    foreach ($lines as $line) {
-        if (trim($line) === '') continue;
-        list($id, $judul, $harga, $gambar) = explode('|', $line);
-        if ($search && strpos(strtolower($judul), $search) === false) continue;
-        echo '<a href="detail.php?id=' . htmlspecialchars($id) . '" class="card">';
+// Query to fetch books from database
+$query = "SELECT id_buku, judul, harga, gambar01 FROM books";
+if (!empty($search)) {
+    $query .= " WHERE LOWER(judul) LIKE LOWER('%$search%')";
+}
+
+$result = mysqli_query($conn, $query);
+
+if ($result && mysqli_num_rows($result) > 0) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        echo '<a href="../buku?id=' . htmlspecialchars($row['id_buku']) . '" class="card">';
         echo '<div class="overlay"></div>';
-        echo '<img src="assets/images/' . trim($gambar) . '" alt="' . htmlspecialchars($judul) . '">';
-        echo '<div class="price-tag">' . htmlspecialchars($harga) . '</div>';
+        echo '<img src="../../assets/images/cover/' . trim($row['gambar01']) . '" alt="' . htmlspecialchars($row['judul']) . '">';
+        echo '<div class="price-tag">Rp.' . number_format($row['harga'], 0, ',', '.') . '</div>';
         echo '<div class="card-content">';
-        echo '<h3>' . htmlspecialchars($judul) . '</h3>';
+        echo '<h3>' . htmlspecialchars($row['judul']) . '</h3>';
         echo '</div>';
         echo '</a>';
     }
 } else {
     echo "<p>Data buku tidak tersedia.</p>";
 }
+
+// Close database connection
+mysqli_close($conn);
 ?>
 </div>
 
 <?php
-$pollFile = 'data/polling.txt';
-$bookFile = 'data/books.txt';
+// Include database connection again for polling data
+include '../../includes/db.php';
 
 $pollCounts = [];
 $bookCovers = [];
 
-// Ambil data buku dulu
-if (file_exists($bookFile)) {
-    $bookLines = file($bookFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($bookLines as $line) {
-        list($id, $judul, , $gambar) = explode('|', $line);
-        $bookCovers[$id] = [
-            'judul' => $judul,
-            'gambar' => $gambar
+// Fetch book data from database
+$bookQuery = "SELECT id_buku, judul, gambar01 FROM books";
+$bookResult = mysqli_query($conn, $bookQuery);
+
+if ($bookResult && mysqli_num_rows($bookResult) > 0) {
+    while ($row = mysqli_fetch_assoc($bookResult)) {
+        $bookCovers[$row['id_buku']] = [
+            'judul' => $row['judul'],
+            'gambar01' => $row['gambar01']
         ];
     }
 }
 
-// Hitung polling
-if (file_exists($pollFile)) {
-    $pollLines = file($pollFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($pollLines as $line) {
-        list(, , $idBuku,) = explode('|', $line);
-        if (!isset($pollCounts[$idBuku])) {
-            $pollCounts[$idBuku] = 0;
-        }
-        $pollCounts[$idBuku]++;
+// Fetch polling data from database
+$pollQuery = "SELECT id_buku, COUNT(*) as count FROM polling GROUP BY id_buku";
+$pollResult = mysqli_query($conn, $pollQuery);
+
+if ($pollResult && mysqli_num_rows($pollResult) > 0) {
+    while ($row = mysqli_fetch_assoc($pollResult)) {
+        $pollCounts[$row['id_buku']] = $row['count'];
     }
 }
 
-// Ambil 3 teratas
+// Get top 3 books
 arsort($pollCounts);
 $top3 = array_slice($pollCounts, 0, 3, true);
 
-// Susun dalam urutan 2-1-3
+// Arrange in 2-1-3 order
 $ranked = array_keys($top3);
 $customOrder = [$ranked[1] ?? null, $ranked[0] ?? null, $ranked[2] ?? null];
+
+// Close database connection
+mysqli_close($conn);
 ?>
 
 <div class="top3">
@@ -84,7 +91,7 @@ $customOrder = [$ranked[1] ?? null, $ranked[0] ?? null, $ranked[2] ?? null];
     <?php foreach ($customOrder as $index => $idBuku): 
       if (!$idBuku || !isset($bookCovers[$idBuku])) continue;
       $judul = $bookCovers[$idBuku]['judul'];
-      $gambar = $bookCovers[$idBuku]['gambar'];
+      $gambar = $bookCovers[$idBuku]['gambar01'];
       $rankNumber = $index === 0 ? 2 : ($index === 1 ? 1 : 3);
     ?>
       <div class="top-card rank<?= $rankNumber ?>">
@@ -95,7 +102,7 @@ $customOrder = [$ranked[1] ?? null, $ranked[0] ?? null, $ranked[2] ?? null];
             </div>
           <?php endif; ?>
           <div class="book-cover">
-            <img src="../../assets/images/<?= $gambar ?>" alt="<?= htmlspecialchars($judul) ?>">
+            <img src="../../assets/images/cover/<?= $gambar ?>" alt="<?= htmlspecialchars($judul) ?>">
           </div>
           <div class="book-info">
             <p class="judul"><?= htmlspecialchars($judul) ?></p>
@@ -108,7 +115,7 @@ $customOrder = [$ranked[1] ?? null, $ranked[0] ?? null, $ranked[2] ?? null];
 
   <!-- Tombol Lihat Polling -->
   <div class="polling-button-wrapper">
-    <a href="polling.php" class="btn-primary">Lihat Polling</a>
+    <a href="../polling" class="btn-primary">Lihat Polling</a>
   </div>
 </div>
 

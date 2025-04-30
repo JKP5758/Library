@@ -1,11 +1,13 @@
 <?php
 session_start();
+include '../../includes/db.php';
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['username']);
-$userId = $isLoggedIn ? $_SESSION['id'] : '000'; // Use '000' for guest users
+$userId = $isLoggedIn ? $_SESSION['id_user'] : '000'; // Use '000' for guest users
 
 // Get current date and time
+date_default_timezone_set('Asia/Jakarta');
 $currentDate = date('Y-m-d H:i:s');
 
 // Generate a unique transaction ID
@@ -26,100 +28,65 @@ $idKeranjang = isset($_POST['id_keranjang']) ? $_POST['id_keranjang'] : '';
 // Convert comma-separated string to array
 $purchasedEntryIds = !empty($idKeranjang) ? explode(',', $idKeranjang) : [];
 
-// Get items from cart
-$keranjangFile = 'data/keranjang.txt';
-$produkFile = 'data/books.txt';
+// Get items from cart and books
 $items = [];
-
-// Read cart items
-if (file_exists($keranjangFile) && $isLoggedIn) {
-    $lines = file($keranjangFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        list($entryId, $entryUser, $entryBuku, $entryJumlah) = explode('|', $line);
-        if ($entryUser === $userId && in_array($entryId, $purchasedEntryIds)) {
-            $items[] = [
-                'id_buku' => $entryBuku,
-                'jumlah' => $entryJumlah,
-                'entry_id' => $entryId
-            ];
-        }
-    }
-}
-
-// Get book details
-$books = [];
-if (file_exists($produkFile)) {
-    $bookLines = file($produkFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($bookLines as $bookLine) {
-        list($id, $judul, $harga, $gambar) = explode('|', $bookLine);
-        $books[$id] = [
-            'judul' => $judul,
-            'harga' => $harga
+if ($isLoggedIn && !empty($purchasedEntryIds)) {
+    $idList = implode(',', array_map('intval', $purchasedEntryIds));
+    $query = "SELECT c.id_keranjang, c.id_buku, c.jumlah, b.nama_buku, b.harga_buku 
+              FROM carts c 
+              JOIN books b ON c.id_buku = b.id_buku 
+              WHERE c.id_keranjang IN ($idList) AND c.id_user = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $userId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    while ($row = mysqli_fetch_assoc($result)) {
+        $items[] = [
+            'id_buku' => $row['id_buku'],
+            'judul' => $row['nama_buku'],
+            'harga' => $row['harga_buku'],
+            'jumlah' => $row['jumlah'],
+            'entry_id' => $row['id_keranjang']
         ];
     }
 }
 
-// Format items for transaction record
-$itemsData = '';
+// Insert transaction into database
+$query = "INSERT INTO transactions (transaction_id, id_user, nama, email, alamat, no_hp, 
+          jenis_pengiriman, metode_pembayaran, total_tagihan, biaya_pengiriman, diskon, 
+          created_at, status) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "sissssssiiss", 
+    $transactionId, $userId, $nama, $email, $alamat, $noHp, 
+    $jenisPengiriman, $metodePembayaran, $totalTagihan, $shippingCost, 
+    $discountAmount, $currentDate
+);
+mysqli_stmt_execute($stmt);
 
+// Insert transaction items
 foreach ($items as $item) {
-    $bookId = $item['id_buku'];
-    $quantity = $item['jumlah'];
-    $bookTitle = isset($books[$bookId]) ? $books[$bookId]['judul'] : 'Unknown Book';
-    $bookPrice = isset($books[$bookId]) ? $books[$bookId]['harga'] : '0';
-    
-    $itemsData .= $bookId . ':' . $bookTitle . ':' . $quantity . ':' . $bookPrice . ';';
+    $query = "INSERT INTO transaction_items (transaction_id, id_buku, jumlah, harga) 
+              VALUES (?, ?, ?, ?)";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "siid", 
+        $transactionId, $item['id_buku'], $item['jumlah'], $item['harga']
+    );
+    mysqli_stmt_execute($stmt);
 }
 
-// Remove trailing semicolon
-$itemsData = rtrim($itemsData, ';');
-
-// Create transaction record
-$transactionRecord = $transactionId . '|' . 
-                    $userId . '|' . 
-                    $nama . '|' . 
-                    $email . '|' . 
-                    $alamat . '|' . 
-                    $noHp . '|' . 
-                    $jenisPengiriman . '|' . 
-                    $metodePembayaran . '|' . 
-                    $totalTagihan . '|' . 
-                    $shippingCost . '|' . 
-                    $discountAmount . '|' . 
-                    $itemsData . '|' . 
-                    $currentDate . '|' . 
-                    'pending';
-
-// Save transaction to file
-$transaksiFile = 'data/transaksi.txt';
-
-// Create header if file doesn't exist
-if (!file_exists($transaksiFile)) {
-    $header = "ID Transaksi|ID User|Nama|Email|Alamat|No HP|Jenis Pengiriman|Metode Pembayaran|Total Tagihan|Biaya Pengiriman|Diskon|Items|Tanggal|Status\n";
-    file_put_contents($transaksiFile, $header);
+// Delete purchased items from cart
+if ($isLoggedIn && !empty($purchasedEntryIds)) {
+    $idList = implode(',', array_map('intval', $purchasedEntryIds));
+    $query = "DELETE FROM carts WHERE id_keranjang IN ($idList) AND id_user = ?";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $userId);
+    mysqli_stmt_execute($stmt);
 }
 
-// Append transaction record
-file_put_contents($transaksiFile, $transactionRecord . "\n", FILE_APPEND);
-
-// Clear only the purchased items from cart for logged-in users
-if ($isLoggedIn && file_exists($keranjangFile)) {
-    $lines = file($keranjangFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $newLines = [];
-    
-    foreach ($lines as $line) {
-        list($entryId, $entryUser, $entryBuku, $entryJumlah) = explode('|', $line);
-        
-        // Keep items that either:
-        // 1. Belong to a different user
-        // 2. Are cart entries that weren't purchased
-        if ($entryUser !== $userId || !in_array($entryId, $purchasedEntryIds)) {
-            $newLines[] = $line;
-        }
-    }
-    
-    file_put_contents($keranjangFile, implode("\n", $newLines) . "\n");
-}
+// Close database connection
+mysqli_close($conn);
 
 // Redirect to success page
 header('Location: sukses.php?id=' . $transactionId);
