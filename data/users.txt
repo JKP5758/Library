@@ -1,5 +1,0 @@
-ID User | Nama Lengkap | Username | Password | Email | Nomor Telfon | Alamat
-001|Joko Purnomo|jkp|Joko1234|qwertyuiop@gmail.com|081234567890|Boyolali, Jawa Tengah
-002|asis|asis|Asis1234|asok@gmail.com|08232923|oasas
-003|ervin|erv|Ervin1234|asok@gmail.com|08232923|oasas
-004|Beta Tester|test|Test1234|test1234@gmail.com|080987654321|Boyolali, Jawa Tengah

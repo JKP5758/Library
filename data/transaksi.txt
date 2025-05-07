@@ -1,2 +1,0 @@
-TRX20250424100212672|001|Joko Purnomo|qwertyuiop@gmail.com|Boyolali, Jawa Tengah|081234567890|regular|ewallet|55000|15000|0|02:Komi-san wa, Comyushou desu:1:Rp.40.000|2025-04-24 10:02:12|pending
-TRX20250424101653177|000|Mulyono Santoso|qwertyuiop@gmail.com|Taman Njurug, Semarang|0895321562121|sameDay|ewallet|88250|50000|6750|05:Horimiya:1:Rp.45.000|2025-04-24 10:16:53|pending

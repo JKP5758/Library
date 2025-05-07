@@ -51,7 +51,8 @@ $insertStmt = mysqli_prepare($conn, $insertQuery);
 mysqli_stmt_bind_param($insertStmt, "iissi", $idUser, $idBuku, $pesan, $mediaChat, $idParent);
 
 if (mysqli_stmt_execute($insertStmt)) {
-    header("Location: index.php?id=$idBuku");
+    $newChatId = mysqli_insert_id($conn);
+    header("Location: index.php?id=$idBuku#chat-$newChatId");
 } else {
     echo "<script>alert('Gagal menyimpan komentar: " . mysqli_error($conn) . "'); window.history.back();</script>";
 }

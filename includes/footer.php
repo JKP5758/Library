@@ -4,12 +4,12 @@
     <div class="container">
         <div class="footer-content">
             <div class="footer-section">
-                <h3>Aerion Library</h3>
+                <h3>Book Shop</h3>
                 <p>Menyediakan berbagai koleksi buku berkualitas untuk kebutuhan literasi Anda.</p>
             </div>
             <div class="footer-section">
                 <h3>Kontak</h3>
-                <p><i class="fas fa-envelope"></i> info@aerionlibrary.com</p>
+                <p><i class="fas fa-envelope"></i> info@bookshop.com</p>
                 <p><i class="fas fa-phone"></i> (021) 1234-5678</p>
                 <p><i class="fas fa-map-marker-alt"></i> Jl. Buku No. 123, Jakarta</p>
             </div>
@@ -24,7 +24,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; <?= date('Y') ?> Aerion Library. All rights reserved. Davind [XID/09]</p>
+            <p>&copy; <?= date('Y') ?> Book Shop. All rights reserved. jkp</p>
         </div>
     </div>
 </footer>

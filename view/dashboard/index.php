@@ -4,6 +4,26 @@
   <h2>Daftar Buku</h2>
   <form method="get" class="search-form" style="margin-top:20px;">
     <input type="text" name="search" placeholder="Cari judul buku..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" class="search-input">
+    <select name="genre" class="search-input" style="appearance: none;">
+        <option value="">Semua Genre</option>
+        <?php
+        // Include database connection
+        include '../../includes/db.php';
+
+        $genreQuery = "SELECT id_genre, genre FROM genre ORDER BY genre ASC";
+        $genreResult = mysqli_query($conn, $genreQuery);
+        $genres = [];
+        if ($genreResult && mysqli_num_rows($genreResult) > 0) {
+            while ($genreRow = mysqli_fetch_assoc($genreResult)) {
+                $genres[] = $genreRow;
+            }
+        }
+        mysqli_close($conn);
+        ?>
+        <?php foreach ($genres as $genre): ?>
+            <option value="<?= htmlspecialchars($genre['id_genre']) ?>" <?= isset($_GET['genre']) && $_GET['genre'] == $genre['id_genre'] ? 'selected' : '' ?>><?= htmlspecialchars($genre['genre']) ?></option>
+        <?php endforeach; ?>
+    </select>
     <button type="submit" class="search-btn">Cari</button>
   </form>
 </div>
@@ -14,11 +34,17 @@
 include '../../includes/db.php';
 
 $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+$genreFilter = isset($_GET['genre']) ? mysqli_real_escape_string($conn, $_GET['genre']) : '';
 
 // Query to fetch books from database
-$query = "SELECT id_buku, judul, harga, gambar01 FROM books";
-if (!empty($search)) {
-    $query .= " WHERE LOWER(judul) LIKE LOWER('%$search%')";
+$query = "SELECT b.id_buku, b.judul, b.harga, b.gambar01 FROM books b";
+if (!empty($genreFilter)) {
+    $query .= " JOIN genre_relasi gr ON b.id_buku = gr.id_book WHERE gr.id_genre = '$genreFilter'";
+    if (!empty($search)) {
+        $query .= " AND LOWER(b.judul) LIKE LOWER('%$search%')";
+    }
+} else if (!empty($search)) {
+    $query .= " WHERE LOWER(b.judul) LIKE LOWER('%$search%')";
 }
 
 $result = mysqli_query($conn, $query);
@@ -95,7 +121,7 @@ mysqli_close($conn);
       $rankNumber = $index === 0 ? 2 : ($index === 1 ? 1 : 3);
     ?>
       <div class="top-card rank<?= $rankNumber ?>">
-        <a href="detail.php?id=<?= htmlspecialchars($idBuku) ?>" class="book-link">
+        <a href="../buku/?id=<?= htmlspecialchars($idBuku) ?>" class="book-link">
           <?php if ($rankNumber === 1): ?>
             <div class="crown-container">
               <img src="../../assets/images/crown.png" alt="Crown" class="crown">

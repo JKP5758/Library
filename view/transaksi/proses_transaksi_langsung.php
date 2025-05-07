@@ -4,7 +4,7 @@ include '../../includes/db.php';
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['username']);
-$userId = $isLoggedIn ? $_SESSION['id_user'] : '000'; // Use '000' for guest users
+$userId = $isLoggedIn ? $_SESSION['id_user'] : '0'; // Use '0' for guest users
 
 // Get current date and time
 date_default_timezone_set('Asia/Jakarta');
@@ -31,9 +31,9 @@ $harga = isset($_POST['harga']) ? $_POST['harga'] : '0';
 $jumlah = isset($_POST['jumlah']) ? $_POST['jumlah'] : '1';
 
 // Insert transaction into database
-$query = "INSERT INTO transactions (transaction_id, id_user, nama, email, alamat, no_hp, 
-          jenis_pengiriman, metode_pembayaran, total_tagihan, biaya_pengiriman, diskon, 
-          created_at, status) 
+$query = "INSERT INTO transaksi (id_transaksi, id_user, nama, email, alamat, telepon, 
+          kurir, metode_pembayaran, subtotal, ongkir, diskon, 
+          waktu_transaksi, status) 
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
 $stmt = mysqli_prepare($conn, $query);
 mysqli_stmt_bind_param($stmt, "sissssssiiss", 
@@ -44,11 +44,11 @@ mysqli_stmt_bind_param($stmt, "sissssssiiss",
 mysqli_stmt_execute($stmt);
 
 // Insert transaction item
-$query = "INSERT INTO transaction_items (transaction_id, id_buku, jumlah, harga) 
-          VALUES (?, ?, ?, ?)";
+$query = "INSERT INTO transaksi_detail (id_transaksi, id_buku, jumlah) 
+          VALUES (?, ?, ?)";
 $stmt = mysqli_prepare($conn, $query);
 $hargaBersih = (int) str_replace(['Rp.', '.', ','], '', $harga);
-mysqli_stmt_bind_param($stmt, "siid", $transactionId, $idBuku, $jumlah, $hargaBersih);
+mysqli_stmt_bind_param($stmt, "sii", $transactionId, $idBuku, $jumlah);
 mysqli_stmt_execute($stmt);
 
 // Close database connection

@@ -6,8 +6,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Aerion Library</title>
+    <title>Book Shop</title>
     <link rel="stylesheet" type="text/css" href="../../assets/style.css">
+    <link rel="icon" type="image/png" href="../../assets/images/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -15,7 +16,7 @@
     <header class="site-header">
         <div class="container">
             <a href="../../view/dashboard/" class="logo">
-                <h1>Aerion Library</h1>
+                <h1>Book Shop</h1>
             </a>
             <nav>
                 <a href="../../view/dashboard/" class="nav-link"><i class="fas fa-home"></i> Beranda</a>

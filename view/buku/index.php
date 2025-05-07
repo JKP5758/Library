@@ -25,6 +25,19 @@ if ($result && mysqli_num_rows($result) > 0) {
     ];
 }
 
+// Fetch genres for this book
+$genres = [];
+if ($book) {
+    $genreQuery = "SELECT g.genre FROM genre_relasi gr JOIN genre g ON gr.id_genre = g.id_genre WHERE gr.id_book = ?";
+    $genreStmt = mysqli_prepare($conn, $genreQuery);
+    mysqli_stmt_bind_param($genreStmt, "s", $book['id']);
+    mysqli_stmt_execute($genreStmt);
+    $genreResult = mysqli_stmt_get_result($genreStmt);
+    while ($genreRow = mysqli_fetch_assoc($genreResult)) {
+        $genres[] = $genreRow['genre'];
+    }
+}
+
 // Fetch chat data from database with user information
 $chatTree = [];
 $chatIndex = [];
@@ -66,7 +79,7 @@ mysqli_close($conn);
 function tampilkanChat($chatList, $level = 0) {
     foreach ($chatList as $chat) {
         $indent = str_repeat("&nbsp;&nbsp;&nbsp;&nbsp;", $level);
-        echo '<div class="chat-item" data-level="'.$level.'">';
+        echo '<div class="chat-item" id="chat-'.$chat['id_chat'].'" data-level="'.$level.'">';
         echo '<div class="chat-header">';
         echo '<div class="chat-user">';
         echo '<span class="username">' . htmlspecialchars($chat['username']) . '</span>';
@@ -161,10 +174,18 @@ function tampilkanChat($chatList, $level = 0) {
                     <h2><?= htmlspecialchars($book['judul']) ?></h2>
                     <p class="price">Rp.<?= number_format($book['harga'], 0, ',', '.') ?></p>
                     <p class="desc"><?= htmlspecialchars($book['desc']) ?></p>
+                    <?php if (!empty($genres)): ?>
+                        <div class="book-genres" style="margin-bottom:15px;">
+                            <strong>Genre:</strong>
+                            <?php foreach ($genres as $genre): ?>
+                                <span class="genre-badge" style="display:inline-block;background:#e3f6ff;color:#3498db;padding:3px 10px;border-radius:12px;margin-right:5px;font-size:0.95em;"> <?= htmlspecialchars($genre) ?> </span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
 
-                    <div class="like" onclick="toggleLike(this)">
-                        <img src="../../assets/images/love_outlane.png" alt="like">
-                        <p>276</p>
+                    <div class="like" id="likeBtn" data-id="<?= htmlspecialchars($book['id']) ?>">
+                        <img id="likeIcon" src="../../assets/images/love_outlane.png" alt="like">
+                        <p id="likeCount">0</p>
                     </div>
 
 
@@ -180,7 +201,7 @@ function tampilkanChat($chatList, $level = 0) {
                         </div>
 
                         <?php if (!$isLoggedIn): ?>
-                            <a href="transaksi_langsung.php?id=<?= htmlspecialchars($book['id']) ?>&judul=<?= urlencode($book['judul']) ?>&harga=<?= urlencode($book['harga']) ?>&jumlah=<?= htmlspecialchars($_POST['jumlah'] ?? '1') ?>" class="beli">Beli Langsung</a>
+                            <a href="../transaksi/transaksi_langsung.php?id=<?= htmlspecialchars($book['id']) ?>&judul=<?= urlencode($book['judul']) ?>&harga=<?= urlencode($book['harga']) ?>&jumlah=<?= htmlspecialchars($_POST['jumlah'] ?? '1') ?>" class="beli">Beli Langsung</a>
                         <?php else: ?>
                             <button type="submit" formaction="../keranjang/proses_keranjang.php" class="keranjang">+ Keranjang</button>
                             <a href="../transaksi/transaksi_langsung.php?id=<?= htmlspecialchars($book['id']) ?>&judul=<?= urlencode($book['judul']) ?>&harga=<?= urlencode($book['harga']) ?>&jumlah=<?= htmlspecialchars($_POST['jumlah'] ?? '1') ?>" class="beli">Beli Langsung</a>
@@ -249,24 +270,57 @@ function tampilkanChat($chatList, $level = 0) {
         // Tombol Like
         const isLoggedIn = <?= $isLoggedIn ? 'true' : 'false' ?>;
 
-        function toggleLike(element) {
-            if (!isLoggedIn) {
-                alert("Silakan login untuk menyukai produk ini.");
-                return;
+        // Like AJAX
+        const likeBtn = document.getElementById('likeBtn');
+        const likeIcon = document.getElementById('likeIcon');
+        const likeCount = document.getElementById('likeCount');
+        const bookId = likeBtn ? likeBtn.getAttribute('data-id') : null;
+
+        function updateLikeDisplay(total, liked) {
+            likeCount.textContent = total;
+            likeIcon.src = liked ? '../../assets/images/love_fill.png' : '../../assets/images/love_outlane.png';
+        }
+
+        function fetchLike() {
+            if (!bookId) return;
+            fetch('like_api.php?id_buku=' + encodeURIComponent(bookId))
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        updateLikeDisplay(data.total, data.liked);
+                    }
+                });
+        }
+
+        if (likeBtn) {
+            fetchLike();
+            likeBtn.onclick = function() {
+                if (!isLoggedIn) {
+                    alert('Silakan login untuk menyukai produk ini.');
+                    window.location.href = '../../view/login';
+                    return;
+                }
+                fetch('like_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'id_buku=' + encodeURIComponent(bookId)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        updateLikeDisplay(data.total, data.liked);
+                    }
+                });
             }
-
-            const img = element.querySelector('img');
-            const count = element.querySelector('p');
-            const liked = img.src.includes('love_fill.png');
-
-            img.src = liked ? '../../assets/images/love_outlane.png' : '../../assets/images/love_fill.png';
-
-            let likeCount = parseInt(count.textContent);
-            count.textContent = liked ? likeCount - 1 : likeCount + 1;
         }
 
         // Fungsi untuk toggle form balas
         function toggleReplyForm(chatId) {
+            if (!isLoggedIn) {
+                alert("Anda Belum Login");
+                window.location.href = "../../view/login";
+                return;
+            }
             const replyForm = document.getElementById('reply-form-' + chatId);
             const allReplyForms = document.querySelectorAll('.reply-form');
             
@@ -287,6 +341,18 @@ function tampilkanChat($chatList, $level = 0) {
             }
         }
     </script>
-
+    <script>
+    // Scroll smooth ke chat jika ada anchor di URL
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.hash && window.location.hash.startsWith('#chat-')) {
+            var el = document.querySelector(window.location.hash);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('highlight-chat'); // Optional: highlight
+                setTimeout(function(){ el.classList.remove('highlight-chat'); }, 2000);
+            }
+        }
+    });
+    </script>
 </body>
 </html>

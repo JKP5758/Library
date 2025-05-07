@@ -32,7 +32,7 @@ $purchasedEntryIds = !empty($idKeranjang) ? explode(',', $idKeranjang) : [];
 $items = [];
 if ($isLoggedIn && !empty($purchasedEntryIds)) {
     $idList = implode(',', array_map('intval', $purchasedEntryIds));
-    $query = "SELECT c.id_keranjang, c.id_buku, c.jumlah, b.nama_buku, b.harga_buku 
+    $query = "SELECT c.id_keranjang, c.id_buku, c.jumlah, b.judul, b.harga 
               FROM carts c 
               JOIN books b ON c.id_buku = b.id_buku 
               WHERE c.id_keranjang IN ($idList) AND c.id_user = ?";
@@ -44,8 +44,8 @@ if ($isLoggedIn && !empty($purchasedEntryIds)) {
     while ($row = mysqli_fetch_assoc($result)) {
         $items[] = [
             'id_buku' => $row['id_buku'],
-            'judul' => $row['nama_buku'],
-            'harga' => $row['harga_buku'],
+            'judul' => $row['judul'],
+            'harga' => $row['harga'],
             'jumlah' => $row['jumlah'],
             'entry_id' => $row['id_keranjang']
         ];
@@ -53,9 +53,7 @@ if ($isLoggedIn && !empty($purchasedEntryIds)) {
 }
 
 // Insert transaction into database
-$query = "INSERT INTO transactions (transaction_id, id_user, nama, email, alamat, no_hp, 
-          jenis_pengiriman, metode_pembayaran, total_tagihan, biaya_pengiriman, diskon, 
-          created_at, status) 
+$query = "INSERT INTO transaksi (id_transaksi, id_user, nama, email, alamat, telepon, kurir, metode_pembayaran, subtotal, ongkir, diskon, waktu_transaksi, status) 
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
 $stmt = mysqli_prepare($conn, $query);
 mysqli_stmt_bind_param($stmt, "sissssssiiss", 
@@ -67,11 +65,11 @@ mysqli_stmt_execute($stmt);
 
 // Insert transaction items
 foreach ($items as $item) {
-    $query = "INSERT INTO transaction_items (transaction_id, id_buku, jumlah, harga) 
-              VALUES (?, ?, ?, ?)";
+    $query = "INSERT INTO transaksi_detail (id_transaksi, id_buku, jumlah) 
+              VALUES (?, ?, ?)";
     $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "siid", 
-        $transactionId, $item['id_buku'], $item['jumlah'], $item['harga']
+    mysqli_stmt_bind_param($stmt, "sii", 
+        $transactionId, $item['id_buku'], $item['jumlah']
     );
     mysqli_stmt_execute($stmt);
 }

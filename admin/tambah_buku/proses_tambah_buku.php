@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 function uploadImage($file) {
-    $targetDir = "../../assets/images/cover";
+    $targetDir = "../../assets/images/cover/";
     $date = date('d-m-y');
     $unique = rand(100, 999);
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);

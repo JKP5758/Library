@@ -6,18 +6,23 @@ include '../../includes/db.php';
 $transactionId = isset($_GET['id']) ? $_GET['id'] : '';
 
 // Get transaction details from database if needed
-$transactionDetails = null;
+$transactionDetails = [];
+$totalPembayaran = 0; // Initialize total payment variable
 if ($transactionId) {
-    $query = "SELECT t.*, ti.jumlah, b.nama_buku, b.harga_buku 
-              FROM transactions t 
-              JOIN transaction_items ti ON t.transaction_id = ti.transaction_id 
+    $query = "SELECT t.*, ti.jumlah, b.judul, b.harga, t.subtotal 
+              FROM transaksi t 
+              JOIN transaksi_detail ti ON t.id_transaksi = ti.id_transaksi 
               JOIN books b ON ti.id_buku = b.id_buku 
-              WHERE t.transaction_id = ?";
+              WHERE t.id_transaksi = ?";
     $stmt = mysqli_prepare($conn, $query);
     mysqli_stmt_bind_param($stmt, "s", $transactionId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
-    $transactionDetails = mysqli_fetch_assoc($result);
+    
+    while ($row = mysqli_fetch_assoc($result)) {
+        $transactionDetails[] = $row; // Store all transaction details
+        $totalPembayaran = $row['subtotal']; // Get subtotal for total payment
+    }
 }
 
 // Close database connection
@@ -36,9 +41,19 @@ mysqli_close($conn);
         <?php if ($transactionId): ?>
         <div class="transaction-details">
             <p>ID Transaksi: <strong><?= htmlspecialchars($transactionId) ?></strong></p>
-            <?php if ($transactionDetails): ?>
-            <p>Total Pembayaran: <strong>Rp. <?= number_format($transactionDetails['total_tagihan'], 0, ',', '.') ?></strong></p>
-            <p>Status: <strong><?= ucfirst($transactionDetails['status']) ?></strong></p>
+            <?php if (!empty($transactionDetails)): ?>
+                <p>Total Pembayaran: <strong>Rp. <?= number_format($totalPembayaran, 0, ',', '.') ?></strong></p>
+                <p>Status: <strong><?= ucfirst($transactionDetails[0]['status']) ?></strong></p>
+                <h3>Detail Pesanan:</h3>
+                <ul class="order-list">
+                    <?php foreach ($transactionDetails as $detail): ?>
+                        <li>
+                            <strong><?= htmlspecialchars($detail['judul']) ?></strong> - 
+                            Jumlah: <?= htmlspecialchars($detail['jumlah']) ?> - 
+                            Harga: Rp. <?= number_format($detail['harga'], 0, ',', '.') ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             <?php endif; ?>
             <p>Simpan ID transaksi ini untuk melacak pesanan Anda.</p>
         </div>
@@ -70,6 +85,24 @@ mysqli_close($conn);
     
     .transaction-details p {
         margin: 5px 0;
+    }
+
+    .order-list {
+        list-style-type: none; /* Remove default list styling */
+        padding: 0; /* Remove default padding */
+        margin: 10px 0; /* Add margin for spacing */
+        background-color: #e9ecef; /* Light background for the list */
+        border-radius: 5px; /* Rounded corners */
+        padding: 10px; /* Padding around the list */
+    }
+
+    .order-list li {
+        padding: 10px; /* Padding for each list item */
+        border-bottom: 1px solid #ddd; /* Separator line */
+    }
+
+    .order-list li:last-child {
+        border-bottom: none; /* Remove bottom border for last item */
     }
 </style>
 

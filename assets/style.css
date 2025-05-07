@@ -1908,7 +1908,7 @@ nav{
 
 .feed-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 30px;
 }
 
@@ -2375,4 +2375,15 @@ nav{
     font-size: 0.9em;
     line-height: 1.4;
     white-space: pre-wrap;
+}
+
+.highlight-chat {
+    animation: highlightFade 2s;
+    background: #e3f6ff !important;
+    box-shadow: 0 0 0 3px #3498db33;
+}
+
+@keyframes highlightFade {
+    0% { background: #e3f6ff; }
+    100% { background: #fff; }
 }
