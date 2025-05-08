@@ -24,6 +24,7 @@
             </div>
         </div>
         <div class="footer-bottom">
+            <p style="margin-bottom: 10px;">v1.0</p>
             <p>&copy; <?= date('Y') ?> Book Shop. All rights reserved. jkp</p>
         </div>
     </div>

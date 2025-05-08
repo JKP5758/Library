@@ -142,17 +142,10 @@ function tampilkanChat($chatList, $level = 0) {
         echo '</div>';
     }
 }
-?>
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Detail Buku</title>
-    <link rel="stylesheet" href="/assets/style.css">
-</head>
-<body>
-    <?php include '../../includes/header.php'; ?>
+include '../../includes/header.php'; 
+
+?>
 
     <main class="site-content">
         <?php if ($book): ?>
